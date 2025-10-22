@@ -1,0 +1,148 @@
+service: personasim-backend
+
+frameworkVersion: '4'
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ${opt:region, 'us-east-1'}
+  stage: ${opt:stage, 'dev'}
+  architecture: arm64
+  memorySize: 512
+  timeout: 30
+
+  # 环境变量
+  environment:
+    STAGE: ${self:provider.stage}
+    LOG_LEVEL: ${self:custom.logLevel.${self:provider.stage}, 'info'}
+    NODE_OPTIONS: --enable-source-maps
+
+  # IAM 权限
+  iam:
+    role:
+      statements:
+        # X-Ray 追踪权限
+        - Effect: Allow
+          Action:
+            - xray:PutTraceSegments
+            - xray:PutTelemetryRecords
+          Resource: '*'
+
+  # 日志配置
+  logs:
+    httpApi: true
+
+  # HTTP API 配置
+  httpApi:
+    cors:
+      allowedOrigins:
+        - '*'
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+        - X-Api-Key
+        - X-Amz-Date
+        - X-Amz-Security-Token
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      maxAge: 86400
+
+  # 启用 X-Ray 追踪
+  tracing:
+    lambda: true
+    apiGateway: true
+
+# 自定义变量
+custom:
+  usersTableName: ${self:service}-users-${self:provider.stage}
+
+  # 根据环境设置日志级别
+  logLevel:
+    dev: debug
+    staging: info
+    prod: info
+
+  # esbuild 配置
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: true
+    exclude:
+      - '@aws-sdk/*'
+    target: node20
+    platform: node
+    format: esm
+    mainFields: [module, main]
+    banner:
+      js: |
+        import { createRequire } from 'module';
+        import { fileURLToPath } from 'url';
+        import { dirname } from 'path';
+        const require = createRequire(import.meta.url);
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = dirname(__filename);
+
+# Lambda 函数定义
+functions:
+  # 健康检查
+  healthCheck:
+    handler: src/functions/health/check.handler
+    description: 健康检查端点
+    events:
+      - httpApi:
+          path: /health
+          method: GET
+
+# CloudFormation 资源
+resources:
+  # CloudFormation 输出
+  Outputs:
+    HttpApiUrl:
+      Description: HTTP API 端点 URL
+      Value:
+        Fn::Sub: 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+      Export:
+        Name: ${self:service}-${self:provider.stage}-api-url
+
+    HttpApiId:
+      Description: HTTP API ID
+      Value:
+        Ref: HttpApi
+      Export:
+        Name: ${self:service}-${self:provider.stage}-api-id
+
+# 自定义配置（按环境）
+custom:
+  logLevel:
+    dev: debug
+    staging: info
+    prod: info
+
+  # esbuild 配置
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: true
+    exclude:
+      - '@aws-sdk/*'
+      - 'aws-sdk'
+    target: node20
+    platform: node
+    format: esm
+    mainFields: [module, main]
+    banner:
+      js: |
+        import { createRequire } from 'module';
+        import { fileURLToPath } from 'url';
+        import { dirname } from 'path';
+        const require = createRequire(import.meta.url);
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = dirname(__filename);
+
+# 插件
+plugins:
+  - serverless-esbuild
