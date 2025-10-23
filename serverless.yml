@@ -2,10 +2,14 @@ service: personasim-backend
 
 frameworkVersion: '4'
 
+# 禁用内置 ESBuild 以使用 serverless-esbuild 插件
+build:
+  esbuild: false
+
 provider:
   name: aws
   runtime: nodejs20.x
-  region: ${opt:region, 'us-east-1'}
+  region: ${opt:region, 'ap-southeast-1'}
   stage: ${opt:stage, 'dev'}
   architecture: arm64
   memorySize: 512
@@ -16,11 +20,35 @@ provider:
     STAGE: ${self:provider.stage}
     LOG_LEVEL: ${self:custom.logLevel.${self:provider.stage}, 'info'}
     NODE_OPTIONS: --enable-source-maps
+    MAIN_TABLE_NAME: ${self:custom.mainTableName}
+    CONTENT_BUCKET_NAME: ${self:service}-content-${self:provider.stage}
 
   # IAM 权限
   iam:
     role:
       statements:
+        # DynamoDB 权限
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Query
+            - dynamodb:Scan
+          Resource:
+            - !GetAtt MainTable.Arn
+            - !Sub '${MainTable.Arn}/index/*'
+
+        # S3 权限
+        - Effect: Allow
+          Action:
+            - s3:PutObject
+            - s3:GetObject
+            - s3:DeleteObject
+          Resource:
+            - !Sub '${ContentBucket.Arn}/*'
+
         # X-Ray 追踪权限
         - Effect: Allow
           Action:
@@ -58,7 +86,7 @@ provider:
 
 # 自定义变量
 custom:
-  usersTableName: ${self:service}-users-${self:provider.stage}
+  mainTableName: ${self:service}-main-${self:provider.stage}
 
   # 根据环境设置日志级别
   logLevel:
@@ -75,16 +103,7 @@ custom:
       - '@aws-sdk/*'
     target: node20
     platform: node
-    format: esm
-    mainFields: [module, main]
-    banner:
-      js: |
-        import { createRequire } from 'module';
-        import { fileURLToPath } from 'url';
-        import { dirname } from 'path';
-        const require = createRequire(import.meta.url);
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = dirname(__filename);
+    format: cjs
 
 # Lambda 函数定义
 functions:
@@ -97,51 +116,131 @@ functions:
           path: /health
           method: GET
 
+  # Sessions 相关端点
+  getUploadUrl:
+    handler: src/functions/sessions/get-upload-url.handler
+    description: 获取 S3 预签名上传 URL
+    events:
+      - httpApi:
+          path: /sessions/upload-url
+          method: POST
+
+  analyzeSession:
+    handler: src/functions/sessions/analyze.handler
+    description: 触发分析会话
+    timeout: 60
+    events:
+      - httpApi:
+          path: /sessions/analyze
+          method: POST
+
+  listSessions:
+    handler: src/functions/sessions/list.handler
+    description: 获取会话列表
+    events:
+      - httpApi:
+          path: /sessions
+          method: GET
+
+  getSession:
+    handler: src/functions/sessions/get.handler
+    description: 获取会话详情
+    events:
+      - httpApi:
+          path: /sessions/{sessionId}
+          method: GET
+
+  # Users 相关端点
+  listUsers:
+    handler: src/functions/users/list.handler
+    description: 获取会话的用户列表
+    events:
+      - httpApi:
+          path: /sessions/{sessionId}/users
+          method: GET
+
+  getUser:
+    handler: src/functions/users/get.handler
+    description: 获取用户详情
+    events:
+      - httpApi:
+          path: /sessions/{sessionId}/users/{userId}
+          method: GET
+
 # CloudFormation 资源
 resources:
-  # CloudFormation 输出
-  Outputs:
-    HttpApiUrl:
-      Description: HTTP API 端点 URL
-      Value:
-        Fn::Sub: 'https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com'
-      Export:
-        Name: ${self:service}-${self:provider.stage}-api-url
+  Resources:
+    # 主数据表
+    MainTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:custom.mainTableName}
+        BillingMode: PAY_PER_REQUEST
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+        AttributeDefinitions:
+          - AttributeName: PK
+            AttributeType: S
+          - AttributeName: SK
+            AttributeType: S
+          - AttributeName: GSI1PK
+            AttributeType: S
+          - AttributeName: GSI1SK
+            AttributeType: S
+        KeySchema:
+          - AttributeName: PK
+            KeyType: HASH
+          - AttributeName: SK
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: GSI1
+            KeySchema:
+              - AttributeName: GSI1PK
+                KeyType: HASH
+              - AttributeName: GSI1SK
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        StreamSpecification:
+          StreamViewType: NEW_AND_OLD_IMAGES
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
 
-    HttpApiId:
-      Description: HTTP API ID
-      Value:
-        Ref: HttpApi
-      Export:
-        Name: ${self:service}-${self:provider.stage}-api-id
-
-# 自定义配置（按环境）
-custom:
-  logLevel:
-    dev: debug
-    staging: info
-    prod: info
-
-  # esbuild 配置
-  esbuild:
-    bundle: true
-    minify: true
-    sourcemap: true
-    exclude:
-      - '@aws-sdk/*'
-      - 'aws-sdk'
-    target: node20
-    platform: node
-    format: esm
-    mainFields: [module, main]
-    banner:
-      js: |
-        import { createRequire } from 'module';
-        import { fileURLToPath } from 'url';
-        import { dirname } from 'path';
-        const require = createRequire(import.meta.url);
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = dirname(__filename);
+    # S3 存储桶 - 存储上传的内容图片
+    ContentBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:service}-content-${self:provider.stage}
+        CorsConfiguration:
+          CorsRules:
+            - AllowedOrigins:
+                - '*'
+              AllowedMethods:
+                - GET
+                - PUT
+                - POST
+              AllowedHeaders:
+                - '*'
+              MaxAge: 3000
+        LifecycleConfiguration:
+          Rules:
+            - Id: DeleteOldContent
+              Status: Enabled
+              ExpirationInDays: 90
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
 
 # 插件
 plugins:

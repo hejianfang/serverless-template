@@ -1,6 +1,5 @@
 import middy from '@middy/core';
 import httpErrorHandler from '@middy/http-error-handler';
-import httpJsonBodyParser from '@middy/http-json-body-parser';
 import httpCors from '@middy/http-cors';
 import { APIGatewayProxyEventV2, APIGatewayProxyResultV2, Handler } from 'aws-lambda';
 import { logger } from './logger';
@@ -120,13 +119,42 @@ export const zodValidator = <T>(
   };
 };
 
+// 条件 JSON body 解析中间件
+const conditionalJsonBodyParser = (): middy.MiddlewareObj<
+  APIGatewayProxyEventV2,
+  APIGatewayProxyResultV2
+> => {
+  const before: middy.MiddlewareFn<APIGatewayProxyEventV2, APIGatewayProxyResultV2> = async (
+    request: middy.Request<APIGatewayProxyEventV2, APIGatewayProxyResultV2>
+  ) => {
+    // 如果没有 body 或 body 为空，跳过解析
+    if (!request.event.body) {
+      return;
+    }
+
+    // 如果是字符串，尝试解析为 JSON
+    if (typeof request.event.body === 'string') {
+      try {
+        request.event.body = JSON.parse(request.event.body) as any;
+      } catch (error) {
+        logger.warn('JSON 解析失败', { error, body: request.event.body });
+        // 解析失败时保持原始 body
+      }
+    }
+  };
+
+  return {
+    before,
+  };
+};
+
 // 标准中间件包装器
 export const createHandler = (
   handler: Handler<APIGatewayProxyEventV2, APIGatewayProxyResultV2>
 ): middy.MiddyfiedHandler<APIGatewayProxyEventV2, APIGatewayProxyResultV2> => {
   return middy(handler)
     .use(requestLogger())
-    .use(httpJsonBodyParser())
+    .use(conditionalJsonBodyParser())
     .use(httpCors())
     .use(customErrorHandler())
     .use(httpErrorHandler());

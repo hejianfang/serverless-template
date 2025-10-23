@@ -46,7 +46,7 @@ aws configure
 输入以下信息：
 - AWS Access Key ID
 - AWS Secret Access Key
-- Default region (建议: us-east-1)
+- Default region (建议: ap-southeast-1)
 - Default output format (建议: json)
 
 验证配置：
@@ -85,7 +85,7 @@ Serverless Framework 会：
 ```
 ✔ Service deployed to stack personasim-backend-dev (123s)
 
-endpoint: https://xxxxx.execute-api.us-east-1.amazonaws.com
+endpoint: https://xxxxx.execute-api.ap-southeast-1.amazonaws.com
 functions:
   healthCheck: personasim-backend-dev-healthCheck (1.2 MB)
   createUser: personasim-backend-dev-createUser (1.2 MB)
@@ -101,7 +101,7 @@ functions:
 
 ```bash
 # 测试健康检查端点
-curl https://xxxxx.execute-api.us-east-1.amazonaws.com/health
+curl https://xxxxx.execute-api.ap-southeast-1.amazonaws.com/health
 ```
 
 预期响应：
@@ -478,7 +478,7 @@ aws ce get-cost-and-usage \
 ```bash
 # 开发环境
 export AWS_PROFILE=dev
-export AWS_REGION=us-east-1
+export AWS_REGION=ap-southeast-1
 
 # 生产环境
 export AWS_PROFILE=prod

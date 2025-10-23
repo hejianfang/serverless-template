@@ -1,377 +1,293 @@
 # PersonaSim Backend
 
-基于 AWS Lambda、API Gateway 和 DynamoDB 构建的现代化 Serverless REST API 项目，使用 Serverless Framework 管理部署。
+基于 30 个固定人设的小红书内容分析系统 - Serverless 后端
 
-## 📋 目录
+## 📋 项目概述
 
-- [技术栈](#技术栈)
-- [项目结构](#项目结构)
-- [快速开始](#快速开始)
-- [开发指南](#开发指南)
-- [部署](#部署)
-- [API 文档](#api-文档)
-- [测试](#测试)
+PersonaSim 是一个智能用户行为模拟系统,通过 AI 分析小红书内容,预测 30 个不同人设的用户行为反应。
 
-## 🚀 技术栈
+### 核心功能
 
-### 核心技术
-- **TypeScript 5.x** - 类型安全的 JavaScript
-- **Node.js 20.x** - 运行时环境
-- **AWS Lambda** - 无服务器计算
-- **API Gateway HTTP API** - API 管理
-- **DynamoDB** - NoSQL 数据库
+- ✅ **S3 预签名上传**: 高效、安全的图片上传机制
+- ✅ **30 个固定人设**: 多样化的真实用户画像
+- ✅ **AI 行为预测**: 基于 GPT-4 的个性化行为分析
+- ✅ **实时分析**: 异步处理,30-60 秒完成分析
+- ✅ **完整 REST API**: 6 个端点,支持会话和用户管理
 
-### 基础设施
-- **Serverless Framework 3.x** - 部署和管理工具
-- **serverless-esbuild** - 快速打包插件
+### 技术栈
 
-### 开发工具
-- **Vitest** - 现代测试框架
-- **ESLint + Prettier** - 代码规范
-- **Middy** - Lambda 中间件引擎
-- **Zod** - Schema 验证
+- **框架**: Serverless Framework 4.x
+- **运行时**: Node.js 20.x (AWS Lambda)
+- **数据库**: DynamoDB (单表设计)
+- **存储**: S3 (预签名 URL)
+- **AI**: GPT-4 via chat-api
+- **语言**: TypeScript 5.x
 
-## 📁 项目结构
+---
+
+## 📚 文档
+
+### 核心文档
+
+| 文档 | 说明 |
+|------|------|
+| [API 接口文档](./docs/API_REFERENCE.md) | 完整的 API 使用指南 |
+| [系统流程](./docs/WORKFLOW.md) | 架构设计和工作流程 |
+| [部署指南](./docs/DEPLOYMENT.md) | 详细部署步骤 |
+| [S3 上传](./docs/S3_PRESIGNED_UPLOAD.md) | S3 预签名上传说明 |
+
+### 快速链接
+
+- **API 端点**: 查看 [API_REFERENCE.md](./docs/API_REFERENCE.md#sessions-接口)
+- **数据库设计**: 查看 [WORKFLOW.md](./docs/WORKFLOW.md#数据库设计)
+- **人设配置**: 查看 [src/config/personas.ts](./src/config/personas.ts)
+- **错误处理**: 查看 [API_REFERENCE.md](./docs/API_REFERENCE.md#错误处理)
+
+---
+
+## 🏗️ 项目结构
 
 ```
 PersonaSim-backend/
+├── docs/                       # 文档
+│   ├── API_REFERENCE.md        # API 接口文档
+│   ├── WORKFLOW.md             # 系统流程
+│   ├── DEPLOYMENT.md           # 部署指南
+│   └── S3_PRESIGNED_UPLOAD.md  # S3 上传说明
 ├── src/
-│   ├── functions/          # Lambda 函数
-│   │   ├── users/          # 用户相关函数
-│   │   │   ├── create.ts   # 创建用户
-│   │   │   ├── get.ts      # 获取用户
-│   │   │   ├── list.ts     # 列出用户
-│   │   │   ├── update.ts   # 更新用户
-│   │   │   └── delete.ts   # 删除用户
-│   │   └── health/
-│   │       └── check.ts    # 健康检查
-│   ├── libs/               # 共享库
-│   │   ├── dynamodb.ts     # DynamoDB 客户端
-│   │   ├── api-gateway.ts  # API 响应工具
-│   │   ├── middleware.ts   # 中间件
-│   │   └── logger.ts       # 日志工具
-│   ├── schemas/            # 数据验证模式
-│   │   └── user.ts
-│   └── types/              # 类型定义
-│       └── index.ts
-├── tests/                  # 测试文件
-│   ├── setup.ts
-│   └── unit/
-├── docs/                   # 文档
-│   ├── API.md
-│   └── DEPLOYMENT.md
-├── .github/
-│   └── workflows/
-│       └── ci.yml          # CI/CD 配置
-├── serverless.yml          # Serverless 配置
-├── package.json
-├── tsconfig.json
-└── README.md
+│   ├── config/                 # 配置文件
+│   │   └── personas.ts         # 30 个固定人设
+│   ├── functions/              # Lambda 函数
+│   │   ├── health/             # 健康检查
+│   │   ├── sessions/           # 会话管理
+│   │   │   ├── get-upload-url.ts   # 获取上传 URL
+│   │   │   ├── analyze.ts          # 触发分析
+│   │   │   ├── list.ts             # 会话列表
+│   │   │   └── get.ts              # 会话详情
+│   │   └── users/              # 用户管理
+│   │       ├── list.ts             # 用户列表
+│   │       └── get.ts              # 用户详情
+│   ├── libs/                   # 工具库
+│   │   ├── api-gateway.ts      # API 响应格式化
+│   │   ├── chat-api.ts         # AI 服务调用
+│   │   ├── dynamodb.ts         # DynamoDB 操作
+│   │   ├── logger.ts           # 日志工具
+│   │   ├── middleware.ts       # Lambda 中间件
+│   │   └── s3.ts               # S3 操作
+│   ├── schemas/                # Zod 验证模式
+│   │   ├── session.ts          # SESSION 实体
+│   │   └── user.ts             # USER 实体
+│   └── services/               # 业务逻辑
+│       └── ai-analyzer.ts      # AI 分析服务
+├── serverless.yml              # Serverless 配置
+├── tsconfig.json               # TypeScript 配置
+└── package.json                # 项目依赖
 ```
 
-## 🎯 快速开始
+## 🚀 快速开始
 
-### 前置要求
+### 1. 环境要求
 
-- Node.js 20+
-- npm 或 yarn
-- AWS CLI 已配置
-- AWS 账户
+- Node.js >= 20.x
+- npm >= 10.x
+- AWS CLI 配置完成
+- Serverless Framework >= 4.x
 
-### 安装
-
-1. **克隆项目并安装依赖**
+### 2. 安装依赖
 
 ```bash
 npm install
 ```
 
-2. **配置 AWS 凭证**
+### 3. 配置环境变量
+
+创建 `.env` 文件:
 
 ```bash
-aws configure
+# AI 服务配置
+AI_MODEL_KEY=gpt-4
+AI_API_ENDPOINT=https://your-chat-api.com
+
+# AWS 区域
+AWS_REGION=ap-southeast-1
+
+# 日志级别
+LOG_LEVEL=info
 ```
 
-输入你的 AWS Access Key、Secret Key 和 Region。
+### 4. 本地开发
 
-### 首次部署
+```bash
+# 类型检查
+npm run type-check
+
+# 格式化代码
+npm run format
+```
+
+### 5. 部署
 
 ```bash
 # 部署到开发环境
-npm run deploy:dev
-```
-
-部署成功后，会输出 API 端点 URL。
-
-## 💻 开发指南
-
-### 可用命令
-
-```bash
-# 测试
-npm test                # 运行测试
-npm run test:ui         # 测试 UI 界面
-npm run test:coverage   # 生成覆盖率报告
-
-# 代码质量
-npm run lint            # 检查代码规范
-npm run lint:fix        # 修复代码规范问题
-npm run format          # 格式化代码
-npm run type-check      # 类型检查
-
-# 部署
-npm run deploy          # 部署（默认 dev 环境）
-npm run deploy:dev      # 部署到开发环境
-npm run deploy:staging  # 部署到测试环境
-npm run deploy:prod     # 部署到生产环境
-
-# 管理
-npm run info            # 查看部署信息
-npm run logs -- -f functionName  # 查看函数日志
-npm run remove          # 删除部署的资源
-```
-
-### 添加新的 API 端点
-
-1. **创建 Lambda 函数**
-
-在 `src/functions/` 下创建新的函数文件：
-
-```typescript
-// src/functions/example/action.ts
-import { APIGatewayProxyEventV2, APIGatewayProxyResultV2 } from 'aws-lambda';
-import { createHandler } from '../../libs/middleware';
-import { successResponse } from '../../libs/api-gateway';
-
-const actionHandler = async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> => {
-  // 你的业务逻辑
-  return successResponse({ message: 'Hello!' });
-};
-
-export const handler = createHandler(actionHandler);
-```
-
-2. **在 serverless.yml 中添加函数定义**
-
-```yaml
-functions:
-  exampleAction:
-    handler: src/functions/example/action.handler
-    description: 示例操作
-    events:
-      - httpApi:
-          path: /example
-          method: GET
-```
-
-3. **重新部署**
-
-```bash
 npm run deploy
-```
 
-## 🚢 部署
-
-### 手动部署
-
-```bash
-# 开发环境
-npm run deploy:dev
-
-# 生产环境
+# 部署到生产环境
 npm run deploy:prod
+
+# 查看部署信息
+serverless info
 ```
 
-### 查看部署信息
+---
+
+## 🔌 API 端点
+
+### Sessions
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/sessions/upload-url` | 获取 S3 上传 URL |
+| POST | `/sessions/analyze` | 触发 AI 分析 |
+| GET | `/sessions` | 获取会话列表 |
+| GET | `/sessions/{sessionId}` | 获取会话详情 |
+
+### Users
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/sessions/{sessionId}/users` | 获取用户列表 |
+| GET | `/sessions/{sessionId}/users/{userId}` | 获取用户详情 |
+
+### Health
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/health` | 健康检查 |
+
+详细说明请查看 [API 接口文档](./docs/API_REFERENCE.md)
+
+---
+
+## 🎯 使用流程
+
+### 1. 获取上传 URL
 
 ```bash
-# 查看当前部署的资源
-npm run info
-
-# 查看特定环境
-serverless info --stage prod
+curl -X POST https://your-api.com/sessions/upload-url \
+  -H "Content-Type: application/json" \
+  -d '{"fileName": "content.jpg", "contentType": "image/jpeg"}'
 ```
 
-### 查看日志
-
-```bash
-# 查看特定函数的日志
-npm run logs -- -f createUser --stage dev
-
-# 实时查看日志
-npm run logs -- -f createUser --stage dev --tail
-```
-
-### 删除部署
-
-```bash
-# 删除开发环境资源
-npm run remove:dev
-
-# 删除生产环境资源
-npm run remove:prod
-```
-
-### CI/CD 部署
-
-项目包含 GitHub Actions 配置：
-
-- **Push 到 `develop` 分支** → 自动部署到开发环境
-- **Push 到 `main` 分支** → 自动部署到生产环境
-
-需要在 GitHub Secrets 中配置：
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-
-## 📖 API 文档
-
-### 基础 URL
-
-```
-https://your-api-id.execute-api.us-east-1.amazonaws.com
-```
-
-### 端点列表
-
-#### 健康检查
-
-```http
-GET /health
-```
-
-**响应示例:**
+**响应**:
 ```json
 {
   "success": true,
   "data": {
-    "status": "healthy",
-    "service": "PersonaSim Backend",
-    "timestamp": "2025-01-15T10:00:00Z"
+    "sessionId": "2025-10-23-abc123",
+    "uploadUrl": "https://...",
+    "objectKey": "sessions/2025-10-23-abc123/1729662000000.jpg"
   }
 }
 ```
 
-#### 创建用户
-
-```http
-POST /users
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "name": "张三",
-  "metadata": {
-    "role": "admin"
-  }
-}
-```
-
-#### 获取用户
-
-```http
-GET /users/{id}
-```
-
-#### 列出用户
-
-```http
-GET /users?status=active&limit=20
-```
-
-#### 更新用户
-
-```http
-PUT /users/{id}
-Content-Type: application/json
-
-{
-  "name": "李四",
-  "status": "inactive"
-}
-```
-
-#### 删除用户
-
-```http
-DELETE /users/{id}
-```
-
-详细 API 文档请查看 [docs/API.md](docs/API.md)
-
-## 🧪 测试
+### 2. 上传图片到 S3
 
 ```bash
-# 运行所有测试
-npm test
-
-# 监听模式
-npm test -- --watch
-
-# 生成覆盖率报告
-npm run test:coverage
-
-# 打开测试 UI
-npm run test:ui
+curl -X PUT "{uploadUrl}" \
+  -H "Content-Type: image/jpeg" \
+  --data-binary @image.jpg
 ```
 
-### 编写测试
+### 3. 触发分析
 
-测试文件放在 `tests/` 目录下，使用 `.test.ts` 或 `.spec.ts` 后缀。
-
-```typescript
-import { describe, it, expect } from 'vitest';
-
-describe('示例测试', () => {
-  it('应该正常工作', () => {
-    expect(1 + 1).toBe(2);
-  });
-});
+```bash
+curl -X POST https://your-api.com/sessions/analyze \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sessionId": "2025-10-23-abc123",
+    "objectKey": "sessions/2025-10-23-abc123/1729662000000.jpg",
+    "contentTitle": "春季新品发布"
+  }'
 ```
 
-## 🔧 配置
+### 4. 查询结果
 
-### 环境变量
-
-在 `serverless.yml` 中配置环境变量：
-
-```yaml
-provider:
-  environment:
-    STAGE: ${self:provider.stage}
-    USERS_TABLE_NAME: ${self:custom.usersTableName}
-    LOG_LEVEL: ${self:custom.logLevel.${self:provider.stage}}
+```bash
+curl https://your-api.com/sessions/2025-10-23-abc123
 ```
 
-### DynamoDB 表设计
+**响应**:
+```json
+{
+  "success": true,
+  "data": {
+    "sessionId": "2025-10-23-abc123",
+    "status": "completed",
+    "metrics": {
+      "interest": 73,
+      "open": 67,
+      "like": 54,
+      "comment": 23,
+      "purchase": 18
+    }
+  }
+}
+```
 
-**用户表** (`personasim-backend-users-{stage}`)
-
-- **主键:**
-  - Partition Key: `id` (String) - UUID
-  - Sort Key: `createdAt` (String) - ISO 时间戳
-
-- **全局二级索引:**
-  - `email-index`: 按邮箱查询
-  - `status-createdAt-index`: 按状态和创建时间查询
-
-## 🤝 贡献
-
-欢迎贡献！请遵循以下步骤：
-
-1. Fork 项目
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
-
-## 📝 许可证
-
-MIT License
-
-## 📞 联系方式
-
-如有问题，请创建 Issue。
+完整示例请查看 [API 接口文档](./docs/API_REFERENCE.md#完整使用示例)
 
 ---
 
-**祝你使用愉快！** 🎉
+## 📊 人设配置
+
+系统内置 30 个多样化的用户人设,覆盖不同年龄、职业、兴趣和购买力:
+
+### 年龄分布
+
+- **18-24 岁**: 8 人 (学生、应届生、时尚博主等)
+- **25-30 岁**: 10 人 (职场新人、市场专员、金融分析师等)
+- **31-35 岁**: 7 人 (职场骨干、全职妈妈、企业主管等)
+- **36-45 岁**: 5 人 (高管、企业家、培训讲师等)
+
+查看完整人设列表: [src/config/personas.ts](./src/config/personas.ts)
+
+---
+
+## 🛠️ 开发命令
+
+```bash
+# 开发
+npm run type-check       # 类型检查
+npm run format          # 格式化代码
+
+# 部署
+npm run deploy          # 部署到 dev
+npm run deploy:prod     # 部署到 prod
+npm run remove          # 删除部署
+
+# 日志
+npm run logs -- -f functionName --tail
+
+# 其他
+serverless info         # 查看部署信息
+serverless invoke -f functionName   # 调用函数
+```
+
+---
+
+## 📄 许可证
+
+MIT License
+
+---
+
+## 📞 联系方式
+
+如有问题,请查看:
+- [API 接口文档](./docs/API_REFERENCE.md)
+- [系统流程](./docs/WORKFLOW.md)
+- [部署指南](./docs/DEPLOYMENT.md)
+
+---
+
+**PersonaSim** - 智能用户行为模拟系统 🚀
