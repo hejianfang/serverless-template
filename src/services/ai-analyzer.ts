@@ -29,7 +29,10 @@ export interface AnalysisResult {
 type UserBehavior = Omit<
   UserEntity,
   'PK' | 'SK' | 'GSI1PK' | 'GSI1SK' | 'entityType' | 'sessionId'
->;
+> & {
+  useFallback: boolean; // 是否使用默认行为
+  error?: string; // 错误信息
+};
 
 /**
  * 从 objectKey 中检测图片格式
@@ -135,30 +138,29 @@ async function analyzePersonaBehavior(
     },
   ];
   // modelKey 需要动态生成
+  const modelKey = await selectModelForAnalysis();
+  logger.debug('modelKey', { modelKey });
   try {
     const response = await callChatAPI({
-      modelKey: await selectModelForAnalysis(),
+      modelKey,
       messages,
-      // options: {
-      //   // temperature: 0.8,
-      //   maxTokens: 10000,
-      // },
     });
 
-    if (!response.success || !response.data) {
+    if (!response.success || !response.response?.content) {
       throw new Error('AI 分析失败: ' + (response.error?.message || 'Unknown error'));
     }
 
-    // 解析 AI 返回的单个用户行为
-    const userBehavior = parsePersonaBehavior(response.data.response, persona);
+    // 解析 AI 返回的单个用户行为（使用正确的访问路径）
+    const userBehavior = parsePersonaBehavior(response.response.content, persona);
 
     logger.debug('人设分析完成', { userId: persona.userId, status: userBehavior.status });
 
     return userBehavior;
   } catch (error) {
     logger.error('人设分析失败', { error, userId: persona.userId });
-    // 返回默认行为(低兴趣,未打开)
-    return generateDefaultPersonaBehavior(persona);
+    // 返回默认行为(低兴趣,未打开)，并记录错误信息
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return generateDefaultPersonaBehavior(persona, errorMessage);
   }
 }
 
@@ -260,14 +262,16 @@ function parsePersonaBehavior(response: string, persona: Persona): UserBehavior 
         { time: '2s', action: '滑过', active: false },
       ],
       insights: parsed.insights || '该用户对内容无明显兴趣。',
+      useFallback: false, // AI 分析成功
       createdAt: new Date().toISOString(),
     };
 
     return userBehavior;
   } catch (error) {
     logger.error('解析人设行为失败', { error, response, userId: persona.userId });
-    // 返回默认行为
-    return generateDefaultPersonaBehavior(persona);
+    // 返回默认行为，并记录解析错误
+    const errorMessage = error instanceof Error ? error.message : 'JSON parse error';
+    return generateDefaultPersonaBehavior(persona, `解析失败: ${errorMessage}`);
   }
 }
 
@@ -317,6 +321,10 @@ function aggregateResults(userBehaviors: UserBehavior[]): AnalysisResult {
     },
   ];
 
+  // 统计成功/失败数量
+  const successCount = userBehaviors.filter((u) => !u.useFallback).length;
+  const failedCount = userBehaviors.filter((u) => u.useFallback).length;
+
   // 构建摘要
   const summary = {
     totalViews: totalUsers,
@@ -325,6 +333,8 @@ function aggregateResults(userBehaviors: UserBehavior[]): AnalysisResult {
     commentCount,
     purchaseCount,
     avgBrowseTime,
+    successCount,
+    failedCount,
   };
 
   return {
@@ -338,7 +348,7 @@ function aggregateResults(userBehaviors: UserBehavior[]): AnalysisResult {
 /**
  * 生成单个人设的默认行为 (AI 失败时的后备方案)
  */
-function generateDefaultPersonaBehavior(persona: Persona): UserBehavior {
+function generateDefaultPersonaBehavior(persona: Persona, error?: string): UserBehavior {
   // 根据人设的购买力和社交习惯,生成合理的默认行为
   const isHighEngagement =
     persona.socialBehavior.includes('高频') || persona.socialBehavior.includes('活跃');
@@ -373,6 +383,8 @@ function generateDefaultPersonaBehavior(persona: Persona): UserBehavior {
       ...(opened ? [{ time: '30s', action: '浏览内容', active: true }] : []),
     ],
     insights: `${persona.name}(${persona.occupation})对内容${opened ? '有一定兴趣' : '兴趣度较低'}。`,
+    useFallback: true, // 使用默认行为
+    error, // 记录错误信息
     createdAt: new Date().toISOString(),
   };
 }

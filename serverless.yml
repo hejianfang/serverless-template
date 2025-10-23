@@ -22,6 +22,8 @@ provider:
     NODE_OPTIONS: --enable-source-maps
     MAIN_TABLE_NAME: ${self:custom.mainTableName}
     CONTENT_BUCKET_NAME: ${self:service}-content-${self:provider.stage}
+    ANALYSIS_QUEUE_URL:
+      Ref: AnalysisQueue
 
   # IAM 权限
   iam:
@@ -48,6 +50,16 @@ provider:
             - s3:DeleteObject
           Resource:
             - !Sub '${ContentBucket.Arn}/*'
+
+        # SQS 权限
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+            - sqs:GetQueueAttributes
+          Resource:
+            - !GetAtt AnalysisQueue.Arn
 
         # X-Ray 追踪权限
         - Effect: Allow
@@ -128,7 +140,7 @@ functions:
   analyzeSession:
     handler: src/functions/sessions/analyze.handler
     description: 触发分析会话
-    timeout: 60
+    timeout: 600
     events:
       - httpApi:
           path: /sessions/analyze
@@ -166,6 +178,20 @@ functions:
       - httpApi:
           path: /sessions/{sessionId}/users/{userId}
           method: GET
+
+  # Worker 函数
+  analyzeWorker:
+    handler: src/functions/workers/analyze-worker.handler
+    description: 处理 AI 分析任务的 Worker
+    timeout: 600
+    memorySize: 1024
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - AnalysisQueue
+              - Arn
+          batchSize: 1
 
 # CloudFormation 资源
 resources:
@@ -236,6 +262,20 @@ resources:
           BlockPublicPolicy: true
           IgnorePublicAcls: true
           RestrictPublicBuckets: true
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+    # SQS 队列 - AI 分析任务队列
+    AnalysisQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-analysis-queue-${self:provider.stage}
+        VisibilityTimeout: 900
+        MessageRetentionPeriod: 1209600
+        ReceiveMessageWaitTimeSeconds: 20
         Tags:
           - Key: Environment
             Value: ${self:provider.stage}

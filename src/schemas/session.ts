@@ -29,6 +29,8 @@ export const SummarySchema = z.object({
   commentCount: z.number(), // 评论数
   purchaseCount: z.number(), // 购买数
   avgBrowseTime: z.number(), // 平均浏览时长(秒)
+  successCount: z.number().default(0), // AI 分析成功的人设数量
+  failedCount: z.number().default(0), // AI 分析失败的人设数量
 });
 
 // Session 实体

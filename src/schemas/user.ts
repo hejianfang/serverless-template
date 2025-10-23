@@ -58,6 +58,10 @@ export const UserEntitySchema = z.object({
   // 用户洞察(AI 生成)
   insights: z.string(),
 
+  // AI 分析状态
+  useFallback: z.boolean().default(false), // 是否使用默认行为（AI 分析失败时）
+  error: z.string().optional(), // 错误信息（如果分析失败）
+
   // 时间戳
   createdAt: z.string(), // ISO 8601 时间戳
 });
