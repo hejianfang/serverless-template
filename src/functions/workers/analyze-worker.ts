@@ -20,12 +20,12 @@ export const handler: SQSHandler = async (event: SQSEvent) => {
     try {
       // 解析消息体
       const message: AnalysisMessage = JSON.parse(record.body);
-      const { sessionId, objectKey, contentTitle } = message;
+      const { sessionId, objectKey, contentTitle, personaCount = 30 } = message;
 
-      logger.info('开始处理分析任务', { sessionId, objectKey });
+      logger.info('开始处理分析任务', { sessionId, objectKey, personaCount });
 
       // 执行 AI 分析
-      await processAnalysis(sessionId, objectKey, contentTitle);
+      await processAnalysis(sessionId, objectKey, contentTitle, personaCount);
 
       logger.info('分析任务完成', { sessionId });
     } catch (error) {
@@ -47,16 +47,17 @@ export const handler: SQSHandler = async (event: SQSEvent) => {
 async function processAnalysis(
   sessionId: string,
   objectKey: string,
-  contentTitle?: string
+  contentTitle?: string,
+  personaCount: number = 30
 ): Promise<void> {
   try {
-    logger.info('开始 AI 分析', { sessionId, objectKey });
+    logger.info('开始 AI 分析', { sessionId, objectKey, personaCount });
 
     // 生成预签名下载 URL（用于 AI 分析）
     const contentUrl = await buildS3Url(objectKey);
 
     // 调用 AI 分析服务（传入 objectKey 用于检测图片格式）
-    const analysisResult = await analyzeContent(contentUrl, contentTitle, objectKey);
+    const analysisResult = await analyzeContent(contentUrl, contentTitle, objectKey, personaCount);
 
     // 创建 USER 实体数组
     const userEntities: UserEntity[] = analysisResult.users.map((user) => ({
@@ -85,7 +86,7 @@ async function processAnalysis(
       objectKey,
       contentTitle,
       status: 'completed',
-      totalUsers: 30,
+      totalUsers: personaCount, // 使用实际分析的人设数量
       metrics: analysisResult.metrics,
       journeySteps: analysisResult.journeySteps,
       summary: analysisResult.summary,

@@ -42,7 +42,7 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
     "prettier": "^3.4.2",
-    "serverless": "^4.4.0",
+    "serverless": "^3.39.0",
     "serverless-esbuild": "^1.54.3",
     "typescript": "^5.7.2"
   },

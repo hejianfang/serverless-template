@@ -15,6 +15,7 @@ interface AnalyzeRequest {
   sessionId: string; // 会话 ID (从 /upload-url 获取)
   objectKey: string; // S3 对象键 (从 /upload-url 获取)
   contentTitle?: string; // 可选标题
+  personaCount?: number; // 分析的人设数量 (5, 10, 15, 20, 30)，默认 30
 }
 
 const analyzeHandler = async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> => {
@@ -32,9 +33,9 @@ const analyzeHandler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
 
     const { sessionId, objectKey } = body;
     const timestamp = new Date().toISOString();
-
+    // 验证和设置 personaCount
+    const personaCount = body.personaCount || 30;
     logger.info('开始创建分析会话', { sessionId, objectKey });
-
     // 1. 验证文件已上传
     const exists = await checkObjectExists(objectKey);
     if (!exists) {
@@ -54,7 +55,7 @@ const analyzeHandler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
       objectKey, // 存储 S3 对象键
       contentTitle: body.contentTitle,
       status: 'analyzing',
-      totalUsers: 30,
+      totalUsers: personaCount,
       metrics: {
         interest: 0,
         open: 0,
@@ -87,6 +88,7 @@ const analyzeHandler = async (event: APIGatewayProxyEventV2): Promise<APIGateway
       sessionId,
       objectKey,
       contentTitle: body.contentTitle,
+      personaCount,
     });
 
     logger.info('分析任务已发送到队列', { sessionId });

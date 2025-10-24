@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import * as fs from 'fs';
-import * as path from 'path';
 import { logger } from '../libs/logger';
+import { PERSONAS_DATA } from './personas-data';
 
 /**
  * Persona 配置 Schema
  */
 export const PersonaConfigSchema = z.object({
+  id: z.number(), // 数字 ID: 1 - 30
   userId: z.string(), // 用户唯一标识: "001" - "030"
   name: z.string(), // 显示名称
   description: z.string(), // 简短描述
@@ -25,6 +25,7 @@ export type PersonaConfig = z.infer<typeof PersonaConfigSchema>;
  * 从 PersonaConfig 提取基础信息
  */
 export interface Persona {
+  id: number;
   userId: string;
   name: string;
   priceRange: string;
@@ -37,44 +38,23 @@ export interface Persona {
 let cachedPersonas: PersonaConfig[] | null = null;
 
 /**
- * 从 personas 目录加载所有 persona 配置
+ * 从内联数据加载所有 persona 配置
  */
-function loadPersonasFromDirectory(): PersonaConfig[] {
-  const personasDir = path.join(__dirname, 'personas');
+function loadPersonasFromData(): PersonaConfig[] {
+  logger.info('开始加载 Personas 配置');
 
-  // 检查目录是否存在
-  if (!fs.existsSync(personasDir)) {
-    logger.warn('Personas 目录不存在，返回空数组', { personasDir });
-    return [];
-  }
-
-  // 读取目录中的所有 JSON 文件
-  const files = fs
-    .readdirSync(personasDir)
-    .filter((file) => file.endsWith('.json'))
-    .sort(); // 按文件名排序
-
-  logger.info('发现 persona 文件', { count: files.length, files });
-
-  // 加载并解析每个文件
+  // 验证并解析所有 persona 数据
   const personas: PersonaConfig[] = [];
 
-  for (const file of files) {
-    const filePath = path.join(personasDir, file);
-
+  for (const data of PERSONAS_DATA) {
     try {
-      // 读取文件内容
-      const content = fs.readFileSync(filePath, 'utf-8');
-      const data = JSON.parse(content);
-
       // 验证数据格式
       const persona = PersonaConfigSchema.parse(data);
-
       personas.push(persona);
       logger.debug('成功加载 persona', { userId: persona.userId, name: persona.name });
     } catch (error) {
-      logger.error('加载 persona 文件失败', { file, error });
-      // 继续加载其他文件
+      logger.error('加载 persona 数据失败', { userId: data.userId, error });
+      // 继续加载其他数据
     }
   }
 
@@ -88,9 +68,9 @@ function loadPersonasFromDirectory(): PersonaConfig[] {
  * @returns Persona 配置数组
  */
 export function getPersonaConfigs(): PersonaConfig[] {
-  // 使用缓存,避免重复读取文件
+  // 使用缓存,避免重复处理
   if (cachedPersonas === null) {
-    cachedPersonas = loadPersonasFromDirectory();
+    cachedPersonas = loadPersonasFromData();
   }
 
   return cachedPersonas;
@@ -105,6 +85,7 @@ export function getPersonas(): Persona[] {
 
   // 转换为旧版本格式
   return configs.map((config) => ({
+    id: config.id,
     userId: config.userId,
     name: config.name,
     priceRange: config.priceRange || '未知',

@@ -58,24 +58,56 @@ function detectImageFormat(objectKey?: string): string {
 }
 
 /**
- * 分析内容并生成模拟用户数据 (基于 30 个固定人设)
+ * 从数组中随机选取指定数量的元素（Fisher-Yates 洗牌算法）
+ */
+function selectRandomPersonas<T>(array: T[], count: number): T[] {
+  if (count >= array.length) {
+    return array; // 如果请求数量 >= 总数，返回全部
+  }
+
+  // Fisher-Yates 洗牌算法
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled.slice(0, count);
+}
+
+/**
+ * 分析内容并生成模拟用户数据 (基于固定人设)
  * @param contentUrl S3 图片 URL
  * @param contentTitle 内容标题
  * @param objectKey S3 对象键（用于检测图片格式）
+ * @param personaCount 分析的人设数量 (5, 10, 15, 20, 30)，默认 30
  * @returns 分析结果
  */
 export async function analyzeContent(
   contentUrl: string,
   contentTitle?: string,
-  objectKey?: string
+  objectKey?: string,
+  personaCount: number = 30
 ): Promise<AnalysisResult> {
-  logger.info('开始 AI 分析 (30 个人设)', { contentUrl, contentTitle, objectKey });
+  logger.info('开始 AI 分析', { contentUrl, contentTitle, objectKey, personaCount });
 
-  // 获取 30 个固定人设
-  const personas = getPersonas();
+  // 获取所有人设
+  const allPersonas = getPersonas(); // 30 个
+
+  // 根据 personaCount 选择人设
+  const personas =
+    personaCount === 30
+      ? allPersonas // 使用全部，不随机
+      : selectRandomPersonas(allPersonas, personaCount); // 随机选取
+
+  logger.info(`实际分析人设数量: ${personas.length}`, {
+    requested: personaCount,
+    isRandom: personaCount < 30,
+    selectedIds: personas.map((p) => p.userId),
+  });
 
   // 并发限制 (同时最多 5 个请求)
-  const limit = pLimit(5);
+  const limit = pLimit(10);
 
   try {
     // 为每个人设单独调用 AI 分析
@@ -140,6 +172,7 @@ async function analyzePersonaBehavior(
     const response = await callChatAPI({
       modelKey,
       messages,
+      instanceId: persona.id,
     });
 
     if (!response.success || !response.response?.content) {

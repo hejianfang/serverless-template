@@ -1,10 +1,6 @@
 service: personasim-backend
 
-frameworkVersion: '4'
-
-# 禁用内置 ESBuild 以使用 serverless-esbuild 插件
-build:
-  esbuild: false
+frameworkVersion: '3'
 
 provider:
   name: aws

@@ -12,6 +12,7 @@ export interface AnalysisMessage {
   sessionId: string;
   objectKey: string;
   contentTitle?: string;
+  personaCount?: number; // 分析的人设数量 (5, 10, 15, 20, 30)
 }
 
 /**
