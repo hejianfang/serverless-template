@@ -1,428 +1,133 @@
-// 30个固定用户人设配置
-export interface Persona {
-  userId: string; // "001" - "030"
-  name: string; // 真实中文姓名
-  age: number; // 年龄
-  gender: 'male' | 'female'; // 性别
-  occupation: string; // 职业
-  interests: string[]; // 兴趣爱好
-  personality: string; // 性格特征
-  purchasingPower: 'low' | 'medium' | 'high'; // 购买力
-  priceRange: string; // 价格敏感度范围
-  lifestyle: string; // 生活方式
-  socialBehavior: string; // 社交习惯
-}
-
-export const PERSONAS: Persona[] = [
-  // 1-8: 年轻群体 (18-24岁)
-  {
-    userId: '001',
-    name: '李华',
-    age: 22,
-    gender: 'female',
-    occupation: '大学生',
-    interests: ['美妆', '时尚', '追星'],
-    personality: '外向、追求新鲜事物、冲动消费',
-    purchasingPower: 'low',
-    priceRange: '¥20-100',
-    lifestyle: '校园生活，喜欢社交',
-    socialBehavior: '高频互动，爱分享',
-  },
-  {
-    userId: '002',
-    name: '王芳',
-    age: 23,
-    gender: 'female',
-    occupation: '应届毕业生',
-    interests: ['旅游', '摄影', '美食'],
-    personality: '文艺、理性、追求品质',
-    purchasingPower: 'low',
-    priceRange: '¥50-200',
-    lifestyle: '初入职场，向往自由',
-    socialBehavior: '中频互动，选择性点赞',
-  },
-  // {
-  //   userId: '003',
-  //   name: '张伟',
-  //   age: 24,
-  //   gender: 'male',
-  //   occupation: '程序员',
-  //   interests: ['科技', '游戏', '数码'],
-  //   personality: '理性、宅、注重性价比',
-  //   purchasingPower: 'medium',
-  //   priceRange: '¥100-500',
-  //   lifestyle: '加班为主，线上娱乐',
-  //   socialBehavior: '低频互动，潜水观看',
-  // },
-  // {
-  //   userId: '004',
-  //   name: '刘洋',
-  //   age: 21,
-  //   gender: 'female',
-  //   occupation: '艺术生',
-  //   interests: ['艺术', '设计', '手工'],
-  //   personality: '感性、追求个性、审美挑剔',
-  //   purchasingPower: 'low',
-  //   priceRange: '¥30-150',
-  //   lifestyle: '创作为主，注重美感',
-  //   socialBehavior: '中频互动，收藏为主',
-  // },
-  // {
-  //   userId: '005',
-  //   name: '陈静',
-  //   age: 20,
-  //   gender: 'female',
-  //   occupation: '在校大学生',
-  //   interests: ['美妆', '穿搭', '学习'],
-  //   personality: '内向、谨慎、精打细算',
-  //   purchasingPower: 'low',
-  //   priceRange: '¥15-80',
-  //   lifestyle: '学业为重，兼职赚钱',
-  //   socialBehavior: '低频互动，观望为主',
-  // },
-  // {
-  //   userId: '006',
-  //   name: '杨帆',
-  //   age: 23,
-  //   gender: 'male',
-  //   occupation: '健身教练',
-  //   interests: ['健身', '运动', '营养'],
-  //   personality: '阳光、自律、追求健康',
-  //   purchasingPower: 'medium',
-  //   priceRange: '¥80-300',
-  //   lifestyle: '规律作息，注重身材',
-  //   socialBehavior: '高频互动，爱晒照',
-  // },
-  // {
-  //   userId: '007',
-  //   name: '赵敏',
-  //   age: 22,
-  //   gender: 'female',
-  //   occupation: '时尚博主',
-  //   interests: ['时尚', '美妆', '搭配'],
-  //   personality: '外向、潮流、表现欲强',
-  //   purchasingPower: 'medium',
-  //   priceRange: '¥100-400',
-  //   lifestyle: '内容创作，关注热点',
-  //   socialBehavior: '极高频互动，活跃评论',
-  // },
-  // {
-  //   userId: '008',
-  //   name: '孙悦',
-  //   age: 24,
-  //   gender: 'female',
-  //   occupation: '设计师',
-  //   interests: ['设计', '艺术', '咖啡'],
-  //   personality: '细腻、完美主义、品味独特',
-  //   purchasingPower: 'medium',
-  //   priceRange: '¥80-350',
-  //   lifestyle: '加班常态，注重生活品质',
-  //   socialBehavior: '中频互动，喜欢收藏',
-  // },
-
-  // // 9-18: 职场新人 (25-30岁)
-  // {
-  //   userId: '009',
-  //   name: '周杰',
-  //   age: 26,
-  //   gender: 'male',
-  //   occupation: '市场专员',
-  //   interests: ['旅游', '摄影', '美食'],
-  //   personality: '外向、社交能力强、追求体验',
-  //   purchasingPower: 'medium',
-  //   priceRange: '¥150-600',
-  //   lifestyle: '工作与生活平衡',
-  //   socialBehavior: '高频互动，爱分享生活',
-  // },
-  // {
-  //   userId: '010',
-  //   name: '吴磊',
-  //   age: 28,
-  //   gender: 'male',
-  //   occupation: '金融分析师',
-  //   interests: ['投资', '阅读', '高尔夫'],
-  //   personality: '理性、稳重、注重品质',
-  //   purchasingPower: 'high',
-  //   priceRange: '¥300-1000',
-  //   lifestyle: '高压工作，精英圈子',
-  //   socialBehavior: '低频互动，选择性关注',
-  // },
-  // {
-  //   userId: '011',
-  //   name: '徐娜',
-  //   age: 27,
-  //   gender: 'female',
-  //   occupation: 'HR 主管',
-  //   interests: ['职场', '护肤', '瑜伽'],
-  //   personality: '干练、理性、注重形象',
-  //   purchasingPower: 'high',
-  //   priceRange: '¥200-800',
-  //   lifestyle: '职业女性，自我投资',
-  //   socialBehavior: '中频互动，专业形象',
-  // },
-  // {
-  //   userId: '012',
-  //   name: '朱婷',
-  //   age: 25,
-  //   gender: 'female',
-  //   occupation: '新媒体运营',
-  //   interests: ['内容创作', '追剧', '美食'],
-  //   personality: '活泼、创意强、熬夜党',
-  //   purchasingPower: 'medium',
-  //   priceRange: '¥100-400',
-  //   lifestyle: '互联网人，节奏快',
-  //   socialBehavior: '极高频互动，职业习惯',
-  // },
-  // {
-  //   userId: '013',
-  //   name: '郭晨',
-  //   age: 29,
-  //   gender: 'male',
-  //   occupation: '产品经理',
-  //   interests: ['科技', '效率工具', '跑步'],
-  //   personality: '逻辑思维强、追求效率、理性',
-  //   purchasingPower: 'high',
-  //   priceRange: '¥200-700',
-  //   lifestyle: '工作忙碌，追求效率',
-  //   socialBehavior: '低频互动，目的性强',
-  // },
-  // {
-  //   userId: '014',
-  //   name: '何欣',
-  //   age: 26,
-  //   gender: 'female',
-  //   occupation: '教师',
-  //   interests: ['阅读', '旅游', '烘焙'],
-  //   personality: '温和、耐心、追求稳定',
-  //   purchasingPower: 'medium',
-  //   priceRange: '¥100-350',
-  //   lifestyle: '规律作息，注重家庭',
-  //   socialBehavior: '中频互动，温和评论',
-  // },
-  // {
-  //   userId: '015',
-  //   name: '高峰',
-  //   age: 30,
-  //   gender: 'male',
-  //   occupation: '创业者',
-  //   interests: ['商业', '社交', '运动'],
-  //   personality: '果敢、冒险、决策快',
-  //   purchasingPower: 'high',
-  //   priceRange: '¥300-1500',
-  //   lifestyle: '工作狂，社交广',
-  //   socialBehavior: '中频互动，扩展人脉',
-  // },
-  // {
-  //   userId: '016',
-  //   name: '林心',
-  //   age: 27,
-  //   gender: 'female',
-  //   occupation: '公务员',
-  //   interests: ['阅读', '养生', '理财'],
-  //   personality: '稳重、保守、追求安全感',
-  //   purchasingPower: 'medium',
-  //   priceRange: '¥150-500',
-  //   lifestyle: '稳定生活，注重长远',
-  //   socialBehavior: '低频互动，谨慎发言',
-  // },
-  // {
-  //   userId: '017',
-  //   name: '韩雪',
-  //   age: 28,
-  //   gender: 'female',
-  //   occupation: '律师',
-  //   interests: ['法律', '健身', '艺术'],
-  //   personality: '严谨、独立、追求卓越',
-  //   purchasingPower: 'high',
-  //   priceRange: '¥300-1200',
-  //   lifestyle: '高压职业，自我要求高',
-  //   socialBehavior: '低频互动，精英形象',
-  // },
-  // {
-  //   userId: '018',
-  //   name: '曹丽',
-  //   age: 25,
-  //   gender: 'female',
-  //   occupation: '护士',
-  //   interests: ['医疗', '美食', '追剧'],
-  //   personality: '善良、体贴、实用主义',
-  //   purchasingPower: 'medium',
-  //   priceRange: '¥80-300',
-  //   lifestyle: '轮班工作，珍惜休息',
-  //   socialBehavior: '中频互动，情感丰富',
-  // },
-
-  // // 19-25: 职场骨干 (31-35岁)
-  // {
-  //   userId: '019',
-  //   name: '田野',
-  //   age: 32,
-  //   gender: 'male',
-  //   occupation: '部门经理',
-  //   interests: ['管理', '高尔夫', '品酒'],
-  //   personality: '成熟、有担当、注重品质',
-  //   purchasingPower: 'high',
-  //   priceRange: '¥500-2000',
-  //   lifestyle: '事业家庭兼顾',
-  //   socialBehavior: '低频互动，精英圈层',
-  // },
-  // {
-  //   userId: '020',
-  //   name: '邓超',
-  //   age: 33,
-  //   gender: 'male',
-  //   occupation: '工程师',
-  //   interests: ['科技', '数码', '摄影'],
-  //   personality: '专业、务实、技术宅',
-  //   purchasingPower: 'high',
-  //   priceRange: '¥300-1000',
-  //   lifestyle: '工作为重，爱好发烧',
-  //   socialBehavior: '低频互动，专业分享',
-  // },
-  // {
-  //   userId: '021',
-  //   name: '彭飞',
-  //   age: 34,
-  //   gender: 'male',
-  //   occupation: '建筑师',
-  //   interests: ['建筑', '设计', '旅行'],
-  //   personality: '理性、审美高、追求创新',
-  //   purchasingPower: 'high',
-  //   priceRange: '¥400-1500',
-  //   lifestyle: '创意工作，国际视野',
-  //   socialBehavior: '中频互动，专业形象',
-  // },
-  // {
-  //   userId: '022',
-  //   name: '谢娜',
-  //   age: 31,
-  //   gender: 'female',
-  //   occupation: '全职妈妈',
-  //   interests: ['母婴', '家居', '烘焙'],
-  //   personality: '细心、家庭为重、精打细算',
-  //   purchasingPower: 'medium',
-  //   priceRange: '¥100-500',
-  //   lifestyle: '围绕孩子，注重家庭',
-  //   socialBehavior: '高频互动，妈妈社群',
-  // },
-  // {
-  //   userId: '023',
-  //   name: '沈梦',
-  //   age: 32,
-  //   gender: 'female',
-  //   occupation: '企业主管',
-  //   interests: ['职场', '护肤', '健身'],
-  //   personality: '独立、自信、追求完美',
-  //   purchasingPower: 'high',
-  //   priceRange: '¥300-1200',
-  //   lifestyle: '职业女性，自我管理严格',
-  //   socialBehavior: '中频互动，职业形象',
-  // },
-  // {
-  //   userId: '024',
-  //   name: '蒋文',
-  //   age: 35,
-  //   gender: 'male',
-  //   occupation: '医生',
-  //   interests: ['医学', '阅读', '运动'],
-  //   personality: '理性、专业、追求精准',
-  //   purchasingPower: 'high',
-  //   priceRange: '¥400-1500',
-  //   lifestyle: '工作忙碌，注重健康',
-  //   socialBehavior: '低频互动，专业分享',
-  // },
-  // {
-  //   userId: '025',
-  //   name: '魏宁',
-  //   age: 33,
-  //   gender: 'female',
-  //   occupation: '新手妈妈',
-  //   interests: ['母婴', '早教', '烹饪'],
-  //   personality: '焦虑、学习型、孩子至上',
-  //   purchasingPower: 'high',
-  //   priceRange: '¥200-1000',
-  //   lifestyle: '全心育儿，重视教育',
-  //   socialBehavior: '高频互动，寻求建议',
-  // },
-
-  // // 26-30: 成熟群体 (36-45岁)
-  // {
-  //   userId: '026',
-  //   name: '卢涛',
-  //   age: 38,
-  //   gender: 'male',
-  //   occupation: '公司高管',
-  //   interests: ['管理', '投资', '茶道'],
-  //   personality: '沉稳、战略思维、追求卓越',
-  //   purchasingPower: 'high',
-  //   priceRange: '¥800-3000',
-  //   lifestyle: '高端圈层，注重品味',
-  //   socialBehavior: '极低频互动，浏览为主',
-  // },
-  // {
-  //   userId: '027',
-  //   name: '蔡琳',
-  //   age: 40,
-  //   gender: 'female',
-  //   occupation: '资深HR',
-  //   interests: ['管理', '心理学', '养生'],
-  //   personality: '成熟、洞察力强、追求平衡',
-  //   purchasingPower: 'high',
-  //   priceRange: '¥400-1500',
-  //   lifestyle: '工作生活平衡，注重健康',
-  //   socialBehavior: '低频互动，精选内容',
-  // },
-  // {
-  //   userId: '028',
-  //   name: '丁阳',
-  //   age: 42,
-  //   gender: 'male',
-  //   occupation: '企业家',
-  //   interests: ['商业', '高端社交', '收藏'],
-  //   personality: '果断、视野开阔、追求价值',
-  //   purchasingPower: 'high',
-  //   priceRange: '¥1000-5000',
-  //   lifestyle: '事业成功，享受生活',
-  //   socialBehavior: '极低频互动，被动接收',
-  // },
-  // {
-  //   userId: '029',
-  //   name: '范冰',
-  //   age: 45,
-  //   gender: 'female',
-  //   occupation: '二胎妈妈',
-  //   interests: ['家庭', '教育', '健康'],
-  //   personality: '务实、经验丰富、追求性价比',
-  //   purchasingPower: 'medium',
-  //   priceRange: '¥150-600',
-  //   lifestyle: '家庭为重，经验育儿',
-  //   socialBehavior: '中频互动，实用分享',
-  // },
-  // {
-  //   userId: '030',
-  //   name: '秦岚',
-  //   age: 36,
-  //   gender: 'female',
-  //   occupation: '培训讲师',
-  //   interests: ['教育', '演讲', '旅游'],
-  //   personality: '外向、表达能力强、追求成长',
-  //   purchasingPower: 'high',
-  //   priceRange: '¥300-1200',
-  //   lifestyle: '职业发展，持续学习',
-  //   socialBehavior: '高频互动，爱分享观点',
-  // },
-];
+import { z } from 'zod';
+import * as fs from 'fs';
+import * as path from 'path';
+import { logger } from '../libs/logger';
 
 /**
- * 获取所有人设
+ * Persona 配置 Schema
+ */
+export const PersonaConfigSchema = z.object({
+  userId: z.string(), // 用户唯一标识: "001" - "030"
+  name: z.string(), // 显示名称
+  description: z.string(), // 简短描述
+  category: z.string().optional(), // 分类(如: 母婴、美妆、科技等)
+  priceRange: z.string().optional(), // 价格范围描述
+  systemPrompt: z.string(), // 完整的 system prompt
+});
+
+/**
+ * Persona 配置类型
+ */
+export type PersonaConfig = z.infer<typeof PersonaConfigSchema>;
+
+/**
+ * 兼容旧版本的 Persona 类型 (用于过渡)
+ * 从 PersonaConfig 提取基础信息
+ */
+export interface Persona {
+  userId: string;
+  name: string;
+  priceRange: string;
+  systemPrompt: string;
+}
+
+/**
+ * Persona 缓存
+ */
+let cachedPersonas: PersonaConfig[] | null = null;
+
+/**
+ * 从 personas 目录加载所有 persona 配置
+ */
+function loadPersonasFromDirectory(): PersonaConfig[] {
+  const personasDir = path.join(__dirname, 'personas');
+
+  // 检查目录是否存在
+  if (!fs.existsSync(personasDir)) {
+    logger.warn('Personas 目录不存在，返回空数组', { personasDir });
+    return [];
+  }
+
+  // 读取目录中的所有 JSON 文件
+  const files = fs
+    .readdirSync(personasDir)
+    .filter((file) => file.endsWith('.json'))
+    .sort(); // 按文件名排序
+
+  logger.info('发现 persona 文件', { count: files.length, files });
+
+  // 加载并解析每个文件
+  const personas: PersonaConfig[] = [];
+
+  for (const file of files) {
+    const filePath = path.join(personasDir, file);
+
+    try {
+      // 读取文件内容
+      const content = fs.readFileSync(filePath, 'utf-8');
+      const data = JSON.parse(content);
+
+      // 验证数据格式
+      const persona = PersonaConfigSchema.parse(data);
+
+      personas.push(persona);
+      logger.debug('成功加载 persona', { userId: persona.userId, name: persona.name });
+    } catch (error) {
+      logger.error('加载 persona 文件失败', { file, error });
+      // 继续加载其他文件
+    }
+  }
+
+  logger.info('Personas 加载完成', { total: personas.length });
+
+  return personas;
+}
+
+/**
+ * 获取所有 Persona 配置
+ * @returns Persona 配置数组
+ */
+export function getPersonaConfigs(): PersonaConfig[] {
+  // 使用缓存,避免重复读取文件
+  if (cachedPersonas === null) {
+    cachedPersonas = loadPersonasFromDirectory();
+  }
+
+  return cachedPersonas;
+}
+
+/**
+ * 获取所有 Personas (兼容旧版本接口)
+ * @returns Persona 数组
  */
 export function getPersonas(): Persona[] {
-  return PERSONAS;
+  const configs = getPersonaConfigs();
+
+  // 转换为旧版本格式
+  return configs.map((config) => ({
+    userId: config.userId,
+    name: config.name,
+    priceRange: config.priceRange || '未知',
+    systemPrompt: config.systemPrompt,
+  }));
 }
 
 /**
- * 根据 userId 获取单个人设
+ * 根据 userId 获取单个 Persona
+ * @param userId 用户ID
+ * @returns Persona 配置,如果不存在则返回 undefined
  */
-export function getPersonaById(userId: string): Persona | undefined {
-  return PERSONAS.find((p) => p.userId === userId);
+export function getPersonaById(userId: string): PersonaConfig | undefined {
+  const configs = getPersonaConfigs();
+  return configs.find((p) => p.userId === userId);
+}
+
+/**
+ * 重新加载 Personas (清除缓存)
+ * 用于开发环境或需要动态更新配置时
+ */
+export function reloadPersonas(): void {
+  logger.info('重新加载 Personas');
+  cachedPersonas = null;
+  getPersonaConfigs();
 }

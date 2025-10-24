@@ -107,7 +107,7 @@ export async function analyzeContent(
  */
 async function analyzePersonaBehavior(
   contentUrl: string,
-  contentTitle: string | undefined,
+  _contentTitle: string | undefined,
   persona: Persona,
   objectKey?: string
 ): Promise<UserBehavior> {
@@ -116,20 +116,16 @@ async function analyzePersonaBehavior(
   // 检测图片格式
   const imageFormat = detectImageFormat(objectKey);
 
-  // 构建针对单个人设的 prompt
-  const prompt = buildPersonaPrompt(contentUrl, contentTitle, persona);
-
-  // 调用 Chat API
+  // 使用 persona 的 systemPrompt 作为 system message
+  // 不再需要构建 prompt,因为 systemPrompt 已经包含了所有必要的说明
   const messages: Message[] = [
     {
       role: 'system',
-      content:
-        '你是一个专业的用户行为分析专家,擅长模拟小红书用户对内容的反应和行为。请根据用户人设,预测该用户看到这个内容后的行为。',
+      content: persona.systemPrompt,
     },
     {
       role: 'user',
       content: [
-        { type: 'text', text: prompt },
         {
           type: 'image',
           image: { format: imageFormat, source_url: contentUrl },
@@ -162,70 +158,6 @@ async function analyzePersonaBehavior(
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return generateDefaultPersonaBehavior(persona, errorMessage);
   }
-}
-
-/**
- * 构建针对单个人设的分析 prompt
- */
-function buildPersonaPrompt(
-  contentUrl: string,
-  contentTitle: string | undefined,
-  persona: Persona
-): string {
-  return `
-请分析这个小红书内容,预测以下用户的行为。
-
-## 内容信息:
-- 图片 URL: ${contentUrl}
-- 标题: ${contentTitle || '(无标题)'}
-
-## 用户人设:
-- 姓名: ${persona.name}
-- 年龄: ${persona.age}岁
-- 性别: ${persona.gender === 'male' ? '男' : '女'}
-- 职业: ${persona.occupation}
-- 兴趣爱好: ${persona.interests.join('、')}
-- 性格特征: ${persona.personality}
-- 购买力: ${persona.purchasingPower === 'low' ? '低' : persona.purchasingPower === 'medium' ? '中' : '高'}
-- 价格敏感度: ${persona.priceRange}
-- 生活方式: ${persona.lifestyle}
-- 社交习惯: ${persona.socialBehavior}
-
-## 任务:
-根据用户人设和内容,预测该用户的行为,包括:
-1. **是否打开** (opened: boolean) - 是否点击查看详情
-2. **是否点赞** (liked: boolean) - 是否点赞
-3. **是否评论** (commented: boolean) - 是否发表评论
-4. **是否购买** (purchased: boolean) - 是否产生购买行为
-5. **浏览时长** (browseTime: number) - 停留时间(0-600秒)
-6. **兴趣度** (interest: number) - 对内容的兴趣程度(0-100)
-7. **状态** (status) - 最终状态: "viewed"(仅浏览) | "opened"(打开) | "liked"(点赞) | "commented"(评论) | "purchased"(购买)
-8. **内心独白** (innerMonologue: string) - 看到内容时的第一反应(20-40字)
-9. **行为时间线** (timeline: array) - 3-7个行为步骤,每个包含 time, action, active
-10. **用户洞察** (insights: string) - 行为分析总结(30-50字)
-
-请严格按照以下 JSON 格式返回,不要包含任何其他文字:
-
-\`\`\`json
-{
-  "opened": true,
-  "liked": false,
-  "commented": false,
-  "purchased": false,
-  "browseTime": 45,
-  "interest": 68,
-  "status": "opened",
-  "innerMonologue": "这个设计风格挺符合我的审美,可以看看详情。",
-  "timeline": [
-    { "time": "0s", "action": "看到内容封面", "active": true },
-    { "time": "2s", "action": "点击查看详情", "active": true },
-    { "time": "15s", "action": "浏览图片", "active": true },
-    { "time": "45s", "action": "退出内容", "active": false }
-  ],
-  "insights": "该用户对内容有一定兴趣,但未产生深度互动,可能价格不符合预期。"
-}
-\`\`\`
-`;
 }
 
 /**
@@ -347,17 +279,15 @@ function aggregateResults(userBehaviors: UserBehavior[]): AnalysisResult {
 
 /**
  * 生成单个人设的默认行为 (AI 失败时的后备方案)
+ * 使用随机值生成保守的默认行为
  */
 function generateDefaultPersonaBehavior(persona: Persona, error?: string): UserBehavior {
-  // 根据人设的购买力和社交习惯,生成合理的默认行为
-  const isHighEngagement =
-    persona.socialBehavior.includes('高频') || persona.socialBehavior.includes('活跃');
-  const isLowBudget = persona.purchasingPower === 'low';
-
-  const opened = isHighEngagement || Math.random() > 0.5;
-  const liked = opened && (isHighEngagement || Math.random() > 0.6);
-  const commented = liked && (isHighEngagement || Math.random() > 0.8);
-  const purchased = commented && !isLowBudget && Math.random() > 0.7;
+  // 生成保守的随机默认行为
+  // 由于 AI 分析失败,无法基于详细人设判断,因此使用随机值
+  const opened = Math.random() > 0.5;
+  const liked = opened && Math.random() > 0.7;
+  const commented = liked && Math.random() > 0.85;
+  const purchased = commented && Math.random() > 0.9;
 
   let status: 'viewed' | 'opened' | 'liked' | 'commented' | 'purchased' = 'viewed';
   if (purchased) status = 'purchased';
@@ -382,7 +312,7 @@ function generateDefaultPersonaBehavior(persona: Persona, error?: string): UserB
       { time: '2s', action: opened ? '点击查看详情' : '滑过', active: opened },
       ...(opened ? [{ time: '30s', action: '浏览内容', active: true }] : []),
     ],
-    insights: `${persona.name}(${persona.occupation})对内容${opened ? '有一定兴趣' : '兴趣度较低'}。`,
+    insights: `${persona.name}对内容${opened ? '有一定兴趣' : '兴趣度较低'}。(AI 分析失败,使用默认值)`,
     useFallback: true, // 使用默认行为
     error, // 记录错误信息
     createdAt: new Date().toISOString(),

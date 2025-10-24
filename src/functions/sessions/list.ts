@@ -7,9 +7,7 @@ import { ListSessionsQuerySchema, type SessionEntity } from '../../schemas/sessi
 import { generatePresignedDownloadUrl } from '../../libs/s3';
 import { logger } from '../../libs/logger';
 
-const listHandler = async (
-  event: APIGatewayProxyEventV2
-): Promise<APIGatewayProxyResultV2> => {
+const listHandler = async (event: APIGatewayProxyEventV2): Promise<APIGatewayProxyResultV2> => {
   try {
     // 解析查询参数
     const status = getQueryParam(event, 'status');
